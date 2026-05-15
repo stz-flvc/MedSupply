@@ -1,18 +1,20 @@
 {
   "version": 2,
+  "buildCommand": "pnpm -r build",
+  "outputDirectory": "artifacts/medi-supply/dist/public",
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/index"
+      "destination": "/api/index.ts"
     },
     {
       "source": "/(.*)",
-      "destination": "/artifacts/medi-supply/$1",
+      "destination": "/$1",
       "continue": true
     },
     {
       "source": "/(.*)",
-      "destination": "/artifacts/medi-supply/index.html"
+      "destination": "/index.html"
     }
   ]
 }
