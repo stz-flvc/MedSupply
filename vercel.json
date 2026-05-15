@@ -3,14 +3,14 @@
   "buildCommand": "pnpm -r build",
   "outputDirectory": "artifacts/medi-supply/dist/public",
   "functions": {
-    "api/index.ts": {
-      "includeFiles": "artifacts/api-server/**, lib/**"
+    "api/index.js": {
+      "includeFiles": "artifacts/api-server/dist/**"
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/index.ts"
+      "destination": "/api/index.js"
     },
     {
       "source": "/((?!api/).*)",

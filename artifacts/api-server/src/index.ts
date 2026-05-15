@@ -1,4 +1,5 @@
 import app from "./app";
+export { app };
 import { logger } from "./lib/logger";
 
 const rawPort = process.env["PORT"] || "5000";
