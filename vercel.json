@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/artifacts/medi-supply/$1",
+      "continue": true
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/artifacts/medi-supply/index.html"
+    }
+  ]
+}
