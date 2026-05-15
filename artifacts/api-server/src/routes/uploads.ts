@@ -66,15 +66,26 @@ const upload = multer({
   },
 });
 
-router.post("/upload", upload.single("file"), (req: any, res) => {
-  if (!req.file) {
-    res.status(400).json({ error: "No file uploaded" });
-    return;
+router.post("/upload", (req, res, next) => {
+  if (process.env.NODE_ENV === "production" && !process.env.CLOUDINARY_CLOUD_NAME) {
+    return res.status(503).json({ 
+      error: "Cloud storage is not configured. Please add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your Vercel Environment Variables." 
+    });
   }
+  
+  upload.single("file")(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
 
-  // Cloudinary uses 'path' or 'secure_url', local multer uses 'filename'
-  const fileUrl = req.file.path || req.file.secure_url || `/api/uploads/${req.file.filename}`;
-  res.json({ url: fileUrl });
+    // Cloudinary uses 'path' or 'secure_url', local multer uses 'filename'
+    const fileUrl = (req.file as any).path || (req.file as any).secure_url || `/api/uploads/${req.file.filename}`;
+    res.json({ url: fileUrl });
+  });
 });
 
 export default router;
