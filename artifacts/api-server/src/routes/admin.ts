@@ -2,8 +2,60 @@ import { Router, type IRouter } from "express";
 import { eq, and, ne } from "drizzle-orm";
 import { db, usersTable, productsTable, ordersTable, notificationsTable } from "@workspace/db";
 import { requireRole } from "../middlewares/requireAuth";
+import bcrypt from "bcryptjs";
 
 const router: IRouter = Router();
+
+// Public seed route for demo purposes
+router.post("/admin/seed", async (req, res): Promise<void> => {
+  try {
+    const password = "Password123!";
+    const passwordHash = await bcrypt.hash(password, 10);
+    const adminPasswordHash = await bcrypt.hash("Admin@123!", 10);
+
+    const demoUsers = [
+      {
+        email: "admin@medsupply.ng",
+        passwordHash: adminPasswordHash,
+        role: "admin" as const,
+        status: "approved" as const,
+        fullName: "Platform Admin",
+        companyName: "MedSupply Platform",
+      },
+      {
+        email: "buyer@demo.com",
+        passwordHash,
+        role: "buyer" as const,
+        fullName: "Demo Buyer",
+        companyName: "City Hospital",
+        companyAddress: "123 Healthcare Blvd, Lagos",
+        businessType: "hospital" as const,
+        cacNumber: "RC-1234567",
+        status: "approved" as const,
+      },
+      {
+        email: "vendor@demo.com",
+        passwordHash,
+        role: "vendor" as const,
+        fullName: "Demo Vendor",
+        companyName: "Global Pharma Ltd",
+        nafdacLicense: "NRN-87654321A",
+        status: "approved" as const,
+      }
+    ];
+
+    for (const user of demoUsers) {
+      const existing = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, user.email));
+      if (existing.length === 0) {
+        await db.insert(usersTable).values(user);
+      }
+    }
+
+    res.json({ message: "Demo data seeded successfully. You can now login with the provided credentials." });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 async function sendNotification(userId: number, message: string, type: string) {
   await db.insert(notificationsTable).values({ userId, message, type, read: false });
