@@ -1,26 +1,48 @@
 import { Router } from "express";
 import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import path from "path";
 import fs from "fs";
-import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
-// Ensure uploads directory exists
-const uploadDir = "uploads";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+const isProduction = process.env.NODE_ENV === "production" || !!process.env.CLOUDINARY_CLOUD_NAME;
+
+let storage;
+
+if (isProduction && process.env.CLOUDINARY_CLOUD_NAME) {
+  storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: async (req, file) => {
+      return {
+        folder: "medsupply",
+        resource_type: "auto",
+        public_id: Date.now() + "-" + Math.round(Math.random() * 1e9),
+      };
+    },
+  });
+} else {
+  // Local storage for development
+  const uploadDir = "uploads";
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+  }
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(null, uniqueSuffix + path.extname(file.originalname));
+    },
+  });
+}
 
 const upload = multer({
   storage,
@@ -35,14 +57,14 @@ const upload = multer({
   },
 });
 
-router.post("/upload", upload.single("file"), (req, res) => {
+router.post("/upload", upload.single("file"), (req: any, res) => {
   if (!req.file) {
     res.status(400).json({ error: "No file uploaded" });
     return;
   }
 
-  // Construct URL for the uploaded file
-  const fileUrl = `/api/uploads/${req.file.filename}`;
+  // Cloudinary uses 'path' or 'secure_url', local multer uses 'filename'
+  const fileUrl = req.file.path || req.file.secure_url || `/api/uploads/${req.file.filename}`;
   res.json({ url: fileUrl });
 });
 
