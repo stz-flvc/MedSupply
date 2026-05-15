@@ -1,0 +1,91 @@
+MVP Prompt — Full Updated Version
+Build a B2B Pharmaceutical Distribution Management System.
+Middleman platform between importers/suppliers and wholesalers, hospitals, and bulk buyers. No retail/walk-in functionality. Three distinct user types, each with their own signup, dashboard, and workflow.
+
+1. BUYER
+Signup:
+Full registration form — full name, company name, company address, phone number, email, password, business type (wholesaler / hospital / pharmacy), CAC registration number or business license upload.
+Account is pending until Admin verifies and approves.
+Dashboard:
+
+Product Marketplace — displays all admin-verified vendor products in a clean grid (Jumia/Jiji-style cards with white background product images, product name, vendor, price per unit)
+Search bar — search by product name, category, or vendor
+Product Detail Page — click a product → shows full details → input field to enter desired quantity → submit order request
+Cart/Orders — view all submitted orders with current status (Pending / Confirmed / Proceed to Pay / Fulfilled)
+Notifications — real-time status updates pushed by admin (e.g. "Your order has been confirmed, proceed to payment") — shows as popup and in notification bell
+Payment — when admin triggers "Proceed to Pay", a popup appears on buyer's screen prompting payment confirmation → on confirm, redirects to Paystack checkout
+
+
+2. VENDOR
+Signup:
+Full registration — company name, contact person, phone, email, password, NAFDAC license number, importer/distributor license upload, CAC document upload, product categories they deal in.
+Account is pending until Admin verifies and approves.
+Dashboard:
+
+Upload Product — form to upload each product with:
+
+Product name, category, description
+Product image upload → background auto-removed and replaced with white (clean, professional display)
+COA (Certificate of Analysis) upload
+NAFDAC number / barcode / product license details
+Quantity available
+Price per unit
+
+
+My Products — list of all uploaded products with status: Pending Verification / Verified / Rejected
+Notifications — alert when admin verifies or rejects a product (e.g. "Your product Amoxicillin 500mg has been verified and is now live")
+Vendor can upload multiple products, each going through the same upload and verification process
+
+
+⚠️ Products not yet verified by admin are completely invisible to buyers. Only verified products appear on the marketplace.
+
+
+3. ADMIN
+Signup/Login:
+Email and password only. Admin account is pre-created (not self-signup).
+Dashboard:
+
+User Verification Queue
+
+List of pending buyers and vendors awaiting approval
+View submitted details and uploaded documents
+Approve or Reject with a reason
+On approval, buyer/vendor gets notified and gains access to their dashboard
+
+
+Product Verification Queue
+
+List of products uploaded by vendors awaiting review
+Admin reviews product details, COA, license, NAFDAC number
+Approve → product goes live on buyer marketplace + vendor gets notified
+Reject → vendor gets notified with reason
+
+
+Order Management
+
+View all active buyer orders
+Update order status step by step:
+
+Order Received
+Order Confirmed
+Proceed to Pay → triggers popup on buyer's screen → buyer confirms → redirected to Paystack
+Payment Confirmed
+Fulfilled/Delivered
+
+
+
+
+Buyer & Vendor Management — full list of all registered users, ability to suspend or remove accounts
+Notifications panel — log of all system activity
+
+
+General Notes
+
+Background removal on product images — auto-process on upload, output is clean white background
+Paystack integration — payment only triggered by admin action, not buyer-initiated
+All notifications — both in-app (bell icon) and popup where critical
+Role-based access — each user type sees only their own dashboard, no crossover
+UI style — clean, professional, minimal. Product marketplace feels like a B2B catalog not a retail store
+
+
+Scope: MVP demo. Focus on complete UI flows, role logic, and the order/verification pipeline. Paystack can be sandbox mode for demo.

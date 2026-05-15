@@ -1,0 +1,1051 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: MedSupply B2B Pharmaceutical Distribution API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: products
+    description: Product operations
+  - name: orders
+    description: Order operations
+  - name: notifications
+    description: Notification operations
+  - name: admin
+    description: Admin operations
+  - name: vendor
+    description: Vendor operations
+  - name: buyer
+    description: Buyer operations
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ─── AUTH ──────────────────────────────────────────────────────────────────
+
+  /auth/signup/buyer:
+    post:
+      operationId: signupBuyer
+      tags: [auth]
+      summary: Buyer registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuyerSignupInput"
+      responses:
+        "201":
+          description: Registered — pending approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/signup/vendor:
+    post:
+      operationId: signupVendor
+      tags: [auth]
+      summary: Vendor registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorSignupInput"
+      responses:
+        "201":
+          description: Registered — pending approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── PRODUCTS (Buyer marketplace) ───────────────────────────────────────────
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List verified products (buyer marketplace)
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: vendorId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of verified products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get product detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── VENDOR ─────────────────────────────────────────────────────────────────
+
+  /vendor/products:
+    get:
+      operationId: listVendorProducts
+      tags: [vendor]
+      summary: List vendor's own products
+      responses:
+        "200":
+          description: Vendor products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [vendor]
+      summary: Upload a new product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Product created (pending verification)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /vendor/products/{id}:
+    patch:
+      operationId: updateVendorProduct
+      tags: [vendor]
+      summary: Update own product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteVendorProduct
+      tags: [vendor]
+      summary: Delete own product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /vendor/stats:
+    get:
+      operationId: getVendorStats
+      tags: [vendor]
+      summary: Vendor dashboard summary stats
+      responses:
+        "200":
+          description: Vendor stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorStats"
+
+  # ─── ORDERS (Buyer) ──────────────────────────────────────────────────────────
+
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: Buyer's orders
+      responses:
+        "200":
+          description: Orders list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Place an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Order placed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get order detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /orders/{id}/payment-confirm:
+    post:
+      operationId: confirmOrderPayment
+      tags: [orders]
+      summary: Buyer confirms payment intent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: Current user's notifications
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated notification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    patch:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ─── ADMIN ───────────────────────────────────────────────────────────────────
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Admin dashboard summary stats
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags: [admin]
+      summary: List all users
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [buyer, vendor]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, suspended]
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /admin/users/{id}/approve:
+    patch:
+      operationId: approveUser
+      tags: [admin]
+      summary: Approve a user account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/users/{id}/reject:
+    patch:
+      operationId: rejectUser
+      tags: [admin]
+      summary: Reject a user account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectInput"
+      responses:
+        "200":
+          description: User rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /admin/users/{id}/suspend:
+    patch:
+      operationId: suspendUser
+      tags: [admin]
+      summary: Suspend a user account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User suspended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /admin/users/{id}:
+    delete:
+      operationId: deleteUser
+      tags: [admin]
+      summary: Remove a user account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/products:
+    get:
+      operationId: listAdminProducts
+      tags: [admin]
+      summary: List all products (with optional status filter)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, verified, rejected]
+      responses:
+        "200":
+          description: Products list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /admin/products/{id}/verify:
+    patch:
+      operationId: verifyProduct
+      tags: [admin]
+      summary: Verify and publish a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pricePerUnit:
+                  type: number
+      responses:
+        "200":
+          description: Product verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /admin/products/{id}/reject:
+    patch:
+      operationId: rejectProduct
+      tags: [admin]
+      summary: Reject a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectInput"
+      responses:
+        "200":
+          description: Product rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /admin/orders:
+    get:
+      operationId: listAdminOrders
+      tags: [admin]
+      summary: List all orders
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: All orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  /admin/orders/{id}/status:
+    patch:
+      operationId: updateOrderStatus
+      tags: [admin]
+      summary: Update order status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatusUpdate"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    # ─── AUTH SCHEMAS ──────────────────────────────────────────────────────────
+
+    BuyerSignupInput:
+      type: object
+      required: [fullName, companyName, companyAddress, phone, email, password, businessType, cacNumber]
+      properties:
+        fullName:
+          type: string
+        companyName:
+          type: string
+        companyAddress:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        businessType:
+          type: string
+          enum: [wholesaler, hospital, pharmacy]
+        cacNumber:
+          type: string
+        businessLicenseUrl:
+          type: ["string", "null"]
+
+    VendorSignupInput:
+      type: object
+      required: [companyName, contactPerson, phone, email, password, nafdacLicense, productCategories]
+      properties:
+        companyName:
+          type: string
+        contactPerson:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        nafdacLicense:
+          type: string
+        importerLicenseUrl:
+          type: ["string", "null"]
+        cacDocumentUrl:
+          type: ["string", "null"]
+        productCategories:
+          type: array
+          items:
+            type: string
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user, message]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        message:
+          type: string
+
+    User:
+      type: object
+      required: [id, email, role, status, createdAt]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        role:
+          type: string
+          enum: [buyer, vendor, admin]
+        status:
+          type: string
+          enum: [pending, approved, rejected, suspended]
+        fullName:
+          type: ["string", "null"]
+        companyName:
+          type: ["string", "null"]
+        companyAddress:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        businessType:
+          type: ["string", "null"]
+        cacNumber:
+          type: ["string", "null"]
+        businessLicenseUrl:
+          type: ["string", "null"]
+        contactPerson:
+          type: ["string", "null"]
+        nafdacLicense:
+          type: ["string", "null"]
+        importerLicenseUrl:
+          type: ["string", "null"]
+        cacDocumentUrl:
+          type: ["string", "null"]
+        productCategories:
+          type: ["array", "null"]
+          items:
+            type: string
+        rejectionReason:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    RejectInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    # ─── PRODUCT SCHEMAS ───────────────────────────────────────────────────────
+
+    Product:
+      type: object
+      required: [id, vendorId, name, category, description, pricePerUnit, quantityAvailable, status, createdAt]
+      properties:
+        id:
+          type: integer
+        vendorId:
+          type: integer
+        vendorName:
+          type: ["string", "null"]
+        name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        coaUrl:
+          type: ["string", "null"]
+        nafdacNumber:
+          type: ["string", "null"]
+        barcode:
+          type: ["string", "null"]
+        pricePerUnit:
+          type: number
+        quantityAvailable:
+          type: integer
+        status:
+          type: string
+          enum: [pending, verified, rejected]
+        rejectionReason:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductInput:
+      type: object
+      required: [name, category, description, pricePerUnit, quantityAvailable]
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        coaUrl:
+          type: ["string", "null"]
+        nafdacNumber:
+          type: ["string", "null"]
+        barcode:
+          type: ["string", "null"]
+        pricePerUnit:
+          type: number
+        quantityAvailable:
+          type: integer
+
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        coaUrl:
+          type: ["string", "null"]
+        nafdacNumber:
+          type: ["string", "null"]
+        barcode:
+          type: ["string", "null"]
+        pricePerUnit:
+          type: number
+        quantityAvailable:
+          type: integer
+
+    VendorStats:
+      type: object
+      required: [totalProducts, pendingProducts, verifiedProducts, rejectedProducts]
+      properties:
+        totalProducts:
+          type: integer
+        pendingProducts:
+          type: integer
+        verifiedProducts:
+          type: integer
+        rejectedProducts:
+          type: integer
+
+    # ─── ORDER SCHEMAS ─────────────────────────────────────────────────────────
+
+    Order:
+      type: object
+      required: [id, buyerId, productId, quantity, totalPrice, status, createdAt]
+      properties:
+        id:
+          type: integer
+        buyerId:
+          type: integer
+        buyerName:
+          type: ["string", "null"]
+        buyerCompany:
+          type: ["string", "null"]
+        productId:
+          type: integer
+        productName:
+          type: ["string", "null"]
+        vendorName:
+          type: ["string", "null"]
+        quantity:
+          type: integer
+        totalPrice:
+          type: number
+        status:
+          type: string
+          enum: [received, confirmed, proceed_to_pay, payment_confirmed, fulfilled]
+        paystackRef:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OrderInput:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+
+    OrderStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [received, confirmed, proceed_to_pay, payment_confirmed, fulfilled]
+
+    PaymentResponse:
+      type: object
+      required: [authorizationUrl, reference]
+      properties:
+        authorizationUrl:
+          type: string
+        reference:
+          type: string
+
+    # ─── NOTIFICATION SCHEMAS ──────────────────────────────────────────────────
+
+    Notification:
+      type: object
+      required: [id, userId, message, type, read, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        message:
+          type: string
+        type:
+          type: string
+          enum: [account_approved, account_rejected, product_verified, product_rejected, order_status, payment_required]
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    # ─── ADMIN STATS ───────────────────────────────────────────────────────────
+
+    AdminStats:
+      type: object
+      required: [totalBuyers, totalVendors, pendingUsers, totalProducts, pendingProducts, verifiedProducts, totalOrders, pendingOrders, fulfilledOrders]
+      properties:
+        totalBuyers:
+          type: integer
+        totalVendors:
+          type: integer
+        pendingUsers:
+          type: integer
+        totalProducts:
+          type: integer
+        pendingProducts:
+          type: integer
+        verifiedProducts:
+          type: integer
+        totalOrders:
+          type: integer
+        pendingOrders:
+          type: integer
+        fulfilledOrders:
+          type: integer
