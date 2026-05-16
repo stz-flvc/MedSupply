@@ -13,6 +13,14 @@ export function getPool() {
     if (!connectionString) {
       throw new Error("DATABASE_URL or POSTGRES_URL must be set. Please add it to your environment variables.");
     }
+    
+    try {
+      const url = new URL(connectionString);
+      console.log(`Connecting to database at: ${url.hostname}`);
+    } catch (e) {
+      console.error("Invalid DATABASE_URL format");
+    }
+    
     _pool = new Pool({ connectionString });
   }
   return _pool;
