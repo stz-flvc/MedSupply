@@ -133,6 +133,9 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
       }
     }
 
+    const tables = await db.execute(sql.raw(`SELECT table_name FROM information_schema.tables WHERE table_schema='public'`));
+    logs.push(`Existing tables: ${tables.rows.map(r => r.table_name).join(", ")}`);
+
     res.json({ message: "Success", logs });
   } catch (error: any) {
     console.error("Seed error:", error);
@@ -140,7 +143,8 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
       error: error.message,
       logs,
       detail: error.detail,
-      code: error.code
+      code: error.code,
+      tables: (await db.execute(sql.raw(`SELECT table_name FROM information_schema.tables WHERE table_schema='public'`))).rows.map(r => r.table_name)
     });
   }
 });
