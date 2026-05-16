@@ -15,10 +15,10 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
     logs.push("Starting database initialization...");
     
     // 1. Manual Table Creation
-    const ddl = `
-      CREATE TABLE IF NOT EXISTS "users" (
+    const sqlStatements = [
+      `CREATE TABLE IF NOT EXISTS "users" (
         "id" serial PRIMARY KEY NOT NULL,
-        "email" text NOT NULL UNIQUE,
+        "email" text NOT NULL,
         "password_hash" text NOT NULL,
         "role" text DEFAULT 'buyer' NOT NULL,
         "status" text DEFAULT 'pending' NOT NULL,
@@ -36,16 +36,10 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
         "product_categories" text[],
         "rejection_reason" text,
         "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-        "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-      );
-    `;
-    
-    logs.push("Executing DDL for users table...");
-    await db.execute(sql.raw(ddl));
-    logs.push("Users table verified.");
-
-    const ddlOthers = `
-      CREATE TABLE IF NOT EXISTS "products" (
+        "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+        CONSTRAINT "users_email_unique" UNIQUE("email")
+      );`,
+      `CREATE TABLE IF NOT EXISTS "products" (
         "id" serial PRIMARY KEY NOT NULL,
         "vendor_id" integer NOT NULL,
         "name" text NOT NULL,
@@ -61,8 +55,8 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
         "rejection_reason" text,
         "created_at" timestamp with time zone DEFAULT now() NOT NULL,
         "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS "orders" (
+      );`,
+      `CREATE TABLE IF NOT EXISTS "orders" (
         "id" serial PRIMARY KEY NOT NULL,
         "buyer_id" integer NOT NULL,
         "product_id" integer NOT NULL,
@@ -72,18 +66,21 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
         "paystack_ref" text,
         "created_at" timestamp with time zone DEFAULT now() NOT NULL,
         "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS "notifications" (
+      );`,
+      `CREATE TABLE IF NOT EXISTS "notifications" (
         "id" serial PRIMARY KEY NOT NULL,
         "user_id" integer NOT NULL,
         "message" text NOT NULL,
         "type" text NOT NULL,
         "read" boolean DEFAULT false NOT NULL,
         "created_at" timestamp with time zone DEFAULT now() NOT NULL
-      );
-    `;
-    logs.push("Executing DDL for other tables...");
-    await db.execute(sql.raw(ddlOthers));
+      );`
+    ];
+
+    logs.push("Executing DDL sequentially...");
+    for (const stmt of sqlStatements) {
+      await db.execute(sql.raw(stmt));
+    }
     logs.push("All tables verified.");
 
     // 2. Seed data
