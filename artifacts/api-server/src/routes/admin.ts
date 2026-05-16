@@ -121,7 +121,14 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
 
     res.json({ message: "Database schema initialized and demo data seeded successfully." });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error("Seed error:", error);
+    res.status(500).json({ 
+      error: error.message,
+      detail: error.detail,
+      hint: error.hint,
+      code: error.code,
+      cause: error.cause?.message
+    });
   }
 });
 
