@@ -10,8 +10,11 @@ const router: IRouter = Router();
 
 // Public seed route for demo purposes
 router.post("/admin/seed", async (req, res): Promise<void> => {
+  const logs: string[] = [];
   try {
-    // 1. Manual Table Creation (Bulletproof for Demo)
+    logs.push("Starting database initialization...");
+    
+    // 1. Manual Table Creation
     const ddl = `
       CREATE TABLE IF NOT EXISTS "users" (
         "id" serial PRIMARY KEY NOT NULL,
@@ -35,6 +38,13 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
         "created_at" timestamp with time zone DEFAULT now() NOT NULL,
         "updated_at" timestamp with time zone DEFAULT now() NOT NULL
       );
+    `;
+    
+    logs.push("Executing DDL for users table...");
+    await db.execute(sql.raw(ddl));
+    logs.push("Users table verified.");
+
+    const ddlOthers = `
       CREATE TABLE IF NOT EXISTS "products" (
         "id" serial PRIMARY KEY NOT NULL,
         "vendor_id" integer NOT NULL,
@@ -72,9 +82,9 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
         "created_at" timestamp with time zone DEFAULT now() NOT NULL
       );
     `;
-    
-    console.log("Initializing database schema...");
-    await db.execute(sql.raw(ddl));
+    logs.push("Executing DDL for other tables...");
+    await db.execute(sql.raw(ddlOthers));
+    logs.push("All tables verified.");
 
     // 2. Seed data
     const password = "Password123!";
@@ -112,22 +122,25 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
       }
     ];
 
+    logs.push("Checking for existing users...");
     for (const user of demoUsers) {
       const existing = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, user.email));
       if (existing.length === 0) {
+        logs.push(`Creating user: ${user.email}`);
         await db.insert(usersTable).values(user);
+      } else {
+        logs.push(`User already exists: ${user.email}`);
       }
     }
 
-    res.json({ message: "Database schema initialized and demo data seeded successfully." });
+    res.json({ message: "Success", logs });
   } catch (error: any) {
     console.error("Seed error:", error);
     res.status(500).json({ 
       error: error.message,
+      logs,
       detail: error.detail,
-      hint: error.hint,
-      code: error.code,
-      cause: error.cause?.message
+      code: error.code
     });
   }
 });
