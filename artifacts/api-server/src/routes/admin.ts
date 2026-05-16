@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, ne, desc, and, sql } from "drizzle-orm";
 import { db, usersTable, productsTable, ordersTable, notificationsTable } from "@workspace/db";
 import { requireRole } from "../middlewares/requireAuth";
 import bcrypt from "bcryptjs";
