@@ -9,10 +9,11 @@ let _db: NodePgDatabase<typeof schema> | null = null;
 
 export function getPool() {
   if (!_pool) {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL must be set. Please add it to your environment variables.");
+    const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    if (!connectionString) {
+      throw new Error("DATABASE_URL or POSTGRES_URL must be set. Please add it to your environment variables.");
     }
-    _pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    _pool = new Pool({ connectionString });
   }
   return _pool;
 }
