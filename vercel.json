@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "pnpm -r build",
+  "buildCommand": "pnpm -r build && pnpm --filter @workspace/db run push --force",
   "outputDirectory": "artifacts/medi-supply/dist/public",
   "functions": {
     "api/index.js": {
