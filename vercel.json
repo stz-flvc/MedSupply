@@ -4,7 +4,10 @@
   "outputDirectory": "artifacts/medi-supply/dist/public",
   "functions": {
     "api/index.js": {
-      "includeFiles": "artifacts/api-server/dist/**"
+      "includeFiles": [
+        "artifacts/api-server/dist/**",
+        "lib/db/drizzle/**"
+      ]
     }
   },
   "rewrites": [

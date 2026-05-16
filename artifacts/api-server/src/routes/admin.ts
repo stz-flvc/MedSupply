@@ -1,80 +1,21 @@
 import { Router, type IRouter } from "express";
-import { eq, and, ne } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { db, usersTable, productsTable, ordersTable, notificationsTable } from "@workspace/db";
 import { requireRole } from "../middlewares/requireAuth";
 import bcrypt from "bcryptjs";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import path from "path";
 
 const router: IRouter = Router();
 
 // Public seed route for demo purposes
 router.post("/admin/seed", async (req, res): Promise<void> => {
   try {
-    // 1. Create tables if they don't exist
-    const setupSql = [
-      `CREATE TABLE IF NOT EXISTS "users" (
-        "id" serial PRIMARY KEY NOT NULL,
-        "email" text NOT NULL,
-        "password_hash" text NOT NULL,
-        "role" text DEFAULT 'buyer' NOT NULL,
-        "status" text DEFAULT 'pending' NOT NULL,
-        "full_name" text,
-        "company_name" text,
-        "company_address" text,
-        "phone" text,
-        "business_type" text,
-        "cac_number" text,
-        "business_license_url" text,
-        "contact_person" text,
-        "nafdac_license" text,
-        "importer_license_url" text,
-        "cac_document_url" text,
-        "product_categories" text[],
-        "rejection_reason" text,
-        "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-        "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-        CONSTRAINT "users_email_unique" UNIQUE("email")
-      )`,
-      `CREATE TABLE IF NOT EXISTS "products" (
-        "id" serial PRIMARY KEY NOT NULL,
-        "vendor_id" integer NOT NULL,
-        "name" text NOT NULL,
-        "category" text NOT NULL,
-        "description" text NOT NULL,
-        "image_url" text,
-        "coa_url" text,
-        "nafdac_number" text,
-        "barcode" text,
-        "price_per_unit" numeric(12, 2) NOT NULL,
-        "quantity_available" integer NOT NULL,
-        "status" text DEFAULT 'pending' NOT NULL,
-        "rejection_reason" text,
-        "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-        "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-      )`,
-      `CREATE TABLE IF NOT EXISTS "orders" (
-        "id" serial PRIMARY KEY NOT NULL,
-        "buyer_id" integer NOT NULL,
-        "product_id" integer NOT NULL,
-        "quantity" integer NOT NULL,
-        "total_price" numeric(14, 2) NOT NULL,
-        "status" text DEFAULT 'received' NOT NULL,
-        "paystack_ref" text,
-        "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-        "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-      )`,
-      `CREATE TABLE IF NOT EXISTS "notifications" (
-        "id" serial PRIMARY KEY NOT NULL,
-        "user_id" integer NOT NULL,
-        "message" text NOT NULL,
-        "type" text NOT NULL,
-        "read" boolean DEFAULT false NOT NULL,
-        "created_at" timestamp with time zone DEFAULT now() NOT NULL
-      )`
-    ];
-
-    for (const sqlStr of setupSql) {
-      await db.execute(sql.raw(sqlStr));
-    }
+    // 1. Run migrations
+    const migrationsPath = path.resolve(process.cwd(), "lib/db/drizzle");
+    console.log(`Running migrations from: ${migrationsPath}`);
+    
+    await migrate(db, { migrationsFolder: migrationsPath });
 
     // 2. Seed data
     const password = "Password123!";
