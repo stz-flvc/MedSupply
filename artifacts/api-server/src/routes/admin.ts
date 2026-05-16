@@ -11,26 +11,72 @@ const router: IRouter = Router();
 // Public seed route for demo purposes
 router.post("/admin/seed", async (req, res): Promise<void> => {
   try {
-    // 1. Check existing tables
-    const tableCheck = await db.execute(sql`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public'
-    `);
-    console.log("Current tables:", tableCheck.rows.map((r: any) => r.table_name));
-
-    // 2. Run migrations
-    const migrationsPath = path.resolve(process.cwd(), "lib/db/drizzle");
-    console.log(`Running migrations from: ${migrationsPath}`);
+    // 1. Manual Table Creation (Bulletproof for Demo)
+    const ddl = `
+      CREATE TABLE IF NOT EXISTS "users" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "email" text NOT NULL UNIQUE,
+        "password_hash" text NOT NULL,
+        "role" text DEFAULT 'buyer' NOT NULL,
+        "status" text DEFAULT 'pending' NOT NULL,
+        "full_name" text,
+        "company_name" text,
+        "company_address" text,
+        "phone" text,
+        "business_type" text,
+        "cac_number" text,
+        "business_license_url" text,
+        "contact_person" text,
+        "nafdac_license" text,
+        "importer_license_url" text,
+        "cac_document_url" text,
+        "product_categories" text[],
+        "rejection_reason" text,
+        "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+        "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS "products" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "vendor_id" integer NOT NULL,
+        "name" text NOT NULL,
+        "category" text NOT NULL,
+        "description" text NOT NULL,
+        "image_url" text,
+        "coa_url" text,
+        "nafdac_number" text,
+        "barcode" text,
+        "price_per_unit" numeric(12, 2) NOT NULL,
+        "quantity_available" integer NOT NULL,
+        "status" text DEFAULT 'pending' NOT NULL,
+        "rejection_reason" text,
+        "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+        "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS "orders" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "buyer_id" integer NOT NULL,
+        "product_id" integer NOT NULL,
+        "quantity" integer NOT NULL,
+        "total_price" numeric(14, 2) NOT NULL,
+        "status" text DEFAULT 'received' NOT NULL,
+        "paystack_ref" text,
+        "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+        "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS "notifications" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "user_id" integer NOT NULL,
+        "message" text NOT NULL,
+        "type" text NOT NULL,
+        "read" boolean DEFAULT false NOT NULL,
+        "created_at" timestamp with time zone DEFAULT now() NOT NULL
+      );
+    `;
     
-    try {
-      await migrate(db, { migrationsFolder: migrationsPath });
-    } catch (migrateError: any) {
-      console.warn("Migration failed, attempting manual setup...", migrateError.message);
-      // Fallback manual setup if needed
-    }
+    console.log("Initializing database schema...");
+    await db.execute(sql.raw(ddl));
 
-    // 3. Seed data
+    // 2. Seed data
     const password = "Password123!";
     const passwordHash = await bcrypt.hash(password, 10);
     const adminPasswordHash = await bcrypt.hash("Admin@123!", 10);
