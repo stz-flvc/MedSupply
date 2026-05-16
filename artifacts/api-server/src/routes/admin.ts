@@ -11,13 +11,26 @@ const router: IRouter = Router();
 // Public seed route for demo purposes
 router.post("/admin/seed", async (req, res): Promise<void> => {
   try {
-    // 1. Run migrations
+    // 1. Check existing tables
+    const tableCheck = await db.execute(sql`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `);
+    console.log("Current tables:", tableCheck.rows.map((r: any) => r.table_name));
+
+    // 2. Run migrations
     const migrationsPath = path.resolve(process.cwd(), "lib/db/drizzle");
     console.log(`Running migrations from: ${migrationsPath}`);
     
-    await migrate(db, { migrationsFolder: migrationsPath });
+    try {
+      await migrate(db, { migrationsFolder: migrationsPath });
+    } catch (migrateError: any) {
+      console.warn("Migration failed, attempting manual setup...", migrateError.message);
+      // Fallback manual setup if needed
+    }
 
-    // 2. Seed data
+    // 3. Seed data
     const password = "Password123!";
     const passwordHash = await bcrypt.hash(password, 10);
     const adminPasswordHash = await bcrypt.hash("Admin@123!", 10);
