@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, ne, desc, and, sql } from "drizzle-orm";
-import { db, usersTable, productsTable, ordersTable, notificationsTable } from "@workspace/db";
+import { db, pool, usersTable, productsTable, ordersTable, notificationsTable } from "@workspace/db";
 import { requireRole } from "../middlewares/requireAuth";
 import bcrypt from "bcryptjs";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
@@ -79,7 +79,7 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
 
     logs.push("Executing DDL sequentially...");
     for (const stmt of sqlStatements) {
-      await db.execute(sql.raw(stmt));
+      await pool.query(stmt);
     }
     logs.push("All tables verified.");
 
