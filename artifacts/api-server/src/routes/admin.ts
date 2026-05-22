@@ -140,6 +140,78 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
       }
     }
 
+    // Seed products for vendor@demo.com if the products table is empty
+    const vendorUser = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, "vendor@demo.com")).limit(1);
+    if (vendorUser.length > 0) {
+      const vendorId = vendorUser[0].id;
+      const existingProducts = await db.select({ id: productsTable.id }).from(productsTable).limit(1);
+      if (existingProducts.length === 0) {
+        logs.push(`Seeding 6 verified products for vendor ID: ${vendorId}`);
+        const demoProducts = [
+          {
+            vendorId,
+            name: "Amoxicillin 500mg",
+            category: "antibiotics",
+            description: "Broad-spectrum penicillin antibiotic used to treat bacterial infections.",
+            pricePerUnit: "1500.00",
+            quantityAvailable: 450,
+            status: "verified",
+          },
+          {
+            vendorId,
+            name: "Azithromycin 250mg",
+            category: "antibiotics",
+            description: "Macrolide antibiotic used to treat various bacterial infections.",
+            pricePerUnit: "2200.00",
+            quantityAvailable: 120,
+            status: "verified",
+          },
+          {
+            vendorId,
+            name: "Remdesivir 100mg Vial",
+            category: "antivirals",
+            description: "Antiviral medication used for treating COVID-19.",
+            pricePerUnit: "45000.00",
+            quantityAvailable: 15,
+            status: "verified",
+          },
+          {
+            vendorId,
+            name: "Acyclovir 400mg",
+            category: "antivirals",
+            description: "Antiviral drug primarily used for the treatment of herpes simplex virus infections.",
+            pricePerUnit: "1800.00",
+            quantityAvailable: 350,
+            status: "verified",
+          },
+          {
+            vendorId,
+            name: "Hepatitis B Vaccine",
+            category: "vaccines",
+            description: "Recombinant vaccine that prevents infection by the hepatitis B virus.",
+            pricePerUnit: "5000.00",
+            quantityAvailable: 200,
+            status: "verified",
+          },
+          {
+            vendorId,
+            name: "BCG Vaccine (Freeze-Dried)",
+            category: "vaccines",
+            description: "Vaccine primarily used against tuberculosis.",
+            pricePerUnit: "3500.00",
+            quantityAvailable: 80,
+            status: "verified",
+          }
+        ];
+        for (const p of demoProducts) {
+          await db.insert(productsTable).values(p);
+        }
+        logs.push("Products seeded successfully.");
+      } else {
+        logs.push("Products already exist, skipping product seed.");
+      }
+    }
+
     const tables = await db.execute(sql.raw(`SELECT table_name FROM information_schema.tables WHERE table_schema='public'`));
     logs.push(`Existing tables: ${tables.rows.map(r => r.table_name).join(", ")}`);
 
