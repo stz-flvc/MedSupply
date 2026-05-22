@@ -42,3 +42,15 @@ export const db = new Proxy({} as NodePgDatabase<typeof schema>, {
 });
 
 export * from "./schema/index.js";
+
+/**
+ * Create a new pg.Pool with custom options. Useful for dedicated pools
+ * (e.g. session stores) that shouldn't share connections with the main app pool.
+ */
+export function createPool(opts?: { max?: number; idleTimeoutMillis?: number; connectionTimeoutMillis?: number }) {
+  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL or POSTGRES_URL must be set.");
+  }
+  return new Pool({ connectionString, ...opts });
+}

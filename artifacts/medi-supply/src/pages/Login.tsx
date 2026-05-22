@@ -23,7 +23,7 @@ export default function Login() {
       { data: { email, password } },
       {
         onSuccess: (data) => {
-          qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
+          qc.setQueryData(getGetMeQueryKey(), data.user);
           const user = data.user;
           if (user.status === "pending" || user.status === "rejected") {
             navigate("/pending");

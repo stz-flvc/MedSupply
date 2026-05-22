@@ -13,7 +13,9 @@ const adminNav = [
   { label: "User Verification", href: "/admin/users" },
   { label: "Products", href: "/admin/products" },
   { label: "Orders", href: "/admin/orders" },
+  { label: "Stock Count", href: "/admin/stock-count" },
   { label: "All Users", href: "/admin/all-users" },
+  { label: "Chats", href: "/admin/chats" },
 ];
 
 const STATUSES = [

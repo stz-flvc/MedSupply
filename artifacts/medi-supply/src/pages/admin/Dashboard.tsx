@@ -1,18 +1,21 @@
 import { Link } from "wouter";
 import { useGetAdminStats } from "@workspace/api-client-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Users, Package, ShoppingCart, CheckCircle, Clock, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Package, ShoppingCart, CheckCircle, Clock, TrendingUp, AlertCircle, RefreshCw } from "lucide-react";
 
 const adminNav = [
   { label: "Dashboard", href: "/admin" },
   { label: "User Verification", href: "/admin/users" },
   { label: "Products", href: "/admin/products" },
   { label: "Orders", href: "/admin/orders" },
+  { label: "Stock Count", href: "/admin/stock-count" },
   { label: "All Users", href: "/admin/all-users" },
+  { label: "Chats", href: "/admin/chats" },
 ];
 
 export default function AdminDashboard() {
-  const { data: stats, isLoading } = useGetAdminStats();
+  const { data: stats, isLoading, error, refetch } = useGetAdminStats();
 
   return (
     <DashboardLayout navItems={adminNav}>
@@ -25,6 +28,20 @@ export default function AdminDashboard() {
         {isLoading ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 9 }).map((_, i) => <div key={i} className="bg-card border border-border rounded-xl p-5 h-24 animate-pulse" />)}
+          </div>
+        ) : error ? (
+          <div className="bg-card border border-border rounded-xl p-8 text-center">
+            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-6 h-6 text-destructive" />
+            </div>
+            <h2 className="text-lg font-semibold mb-2">Failed to load dashboard data</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              {(error as any)?.message || "Could not fetch admin stats. Please try again."}
+            </p>
+            <Button onClick={() => refetch()} variant="outline" className="gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Retry
+            </Button>
           </div>
         ) : stats ? (
           <>
@@ -79,7 +96,15 @@ export default function AdminDashboard() {
               </div>
             </div>
           </>
-        ) : null}
+        ) : (
+          <div className="bg-card border border-border rounded-xl p-8 text-center">
+            <p className="text-sm text-muted-foreground">No data available.</p>
+            <Button onClick={() => refetch()} variant="outline" size="sm" className="mt-3 gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </Button>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

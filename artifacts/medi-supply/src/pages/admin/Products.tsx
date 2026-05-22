@@ -14,7 +14,9 @@ const adminNav = [
   { label: "User Verification", href: "/admin/users" },
   { label: "Products", href: "/admin/products" },
   { label: "Orders", href: "/admin/orders" },
+  { label: "Stock Count", href: "/admin/stock-count" },
   { label: "All Users", href: "/admin/all-users" },
+  { label: "Chats", href: "/admin/chats" },
 ];
 
 type Product = {
@@ -78,6 +80,41 @@ export default function AdminProducts() {
     });
   };
 
+  const handleViewDocument = (url: string, name: string) => {
+    try {
+      if (!url.startsWith("data:")) {
+        window.open(url, "_blank");
+        return;
+      }
+      const parts = url.split(";base64,");
+      const contentType = parts[0].split(":")[1];
+      const byteCharacters = atob(parts[1]);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: contentType });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      let ext = "bin";
+      if (contentType === "image/jpeg") ext = "jpg";
+      else if (contentType === "image/png") ext = "png";
+      else if (contentType === "image/webp") ext = "webp";
+      else if (contentType === "application/pdf") ext = "pdf";
+      else if (contentType.includes("word")) ext = "doc";
+      else if (contentType.includes("officedocument")) ext = "docx";
+      a.download = `${name}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      window.open(url, "_blank");
+    }
+  };
+
   return (
     <DashboardLayout navItems={adminNav}>
       <div className="max-w-screen-xl mx-auto px-4 py-6">
@@ -119,7 +156,7 @@ export default function AdminProducts() {
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-border">
-            <table className="w-full">
+            <table className="w-full min-w-[800px]">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Product</th>
@@ -173,7 +210,7 @@ export default function AdminProducts() {
                 </div>
               )}
               <p className="text-sm text-muted-foreground">{selectedProduct.description}</p>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 {[
                   { label: "Category", value: selectedProduct.category },
                   { label: "Vendor", value: selectedProduct.vendorName || `#${selectedProduct.vendorId}` },
@@ -207,9 +244,9 @@ export default function AdminProducts() {
                 ))}
               </div>
               {selectedProduct.coaUrl && (
-                <a href={selectedProduct.coaUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-sm text-primary hover:underline">
+                <button type="button" onClick={() => handleViewDocument(selectedProduct.coaUrl!, "coa")} className="flex items-center gap-1.5 text-sm text-primary hover:underline">
                   <FileText className="w-4 h-4" /> View Certificate of Analysis (COA)
-                </a>
+                </button>
               )}
             </div>
           )}

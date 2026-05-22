@@ -285,6 +285,34 @@ export interface AdminStats {
   fulfilledOrders: number;
 }
 
+export interface Message {
+  id: number;
+  senderId: number;
+  receiverId: number;
+  content: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface MessageInput {
+  receiverId?: number;
+  content: string;
+}
+
+export interface MessageThread {
+  user: User;
+  lastMessage: Message;
+  unreadCount: number;
+}
+
+export interface VerifyProductInput {
+  pricePerUnit?: number;
+}
+
+export interface MarkMessagesReadInput {
+  senderId?: number;
+}
+
 export type ListProductsParams = {
 search?: string;
 category?: string;
@@ -327,11 +355,11 @@ export const ListAdminProductsStatus = {
   rejected: 'rejected',
 } as const;
 
-export type VerifyProductBody = {
-  pricePerUnit?: number;
-};
-
 export type ListAdminOrdersParams = {
 status?: string;
+};
+
+export type ListMessagesParams = {
+otherUserId?: number;
 };
 

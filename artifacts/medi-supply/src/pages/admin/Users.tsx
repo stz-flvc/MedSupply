@@ -14,7 +14,9 @@ const adminNav = [
   { label: "User Verification", href: "/admin/users" },
   { label: "Products", href: "/admin/products" },
   { label: "Orders", href: "/admin/orders" },
+  { label: "Stock Count", href: "/admin/stock-count" },
   { label: "All Users", href: "/admin/all-users" },
+  { label: "Chats", href: "/admin/chats" },
 ];
 
 type User = {
@@ -72,6 +74,47 @@ export default function AdminUsers() {
         toast({ title: "User rejected" });
       },
     });
+  };
+
+  const handleViewDocument = (url: string, name: string) => {
+    try {
+      if (!url.startsWith("data:")) {
+        window.open(url, "_blank");
+        return;
+      }
+      
+      const parts = url.split(";base64,");
+      const contentType = parts[0].split(":")[1];
+      const byteCharacters = atob(parts[1]);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: contentType });
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      
+      // Determine extension
+      let ext = "bin";
+      if (contentType === "image/jpeg") ext = "jpg";
+      else if (contentType === "image/png") ext = "png";
+      else if (contentType === "image/webp") ext = "webp";
+      else if (contentType === "application/pdf") ext = "pdf";
+      else if (contentType.includes("word")) ext = "doc";
+      else if (contentType.includes("officedocument")) ext = "docx";
+      
+      a.download = `${name}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      // Fallback
+      window.open(url, "_blank");
+    }
   };
 
   return (
@@ -144,7 +187,7 @@ export default function AdminUsers() {
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 {[
                   { label: "Role", value: selectedUser.role },
                   { label: "Status", value: selectedUser.status },
@@ -176,9 +219,21 @@ export default function AdminUsers() {
               {(selectedUser.businessLicenseUrl || selectedUser.importerLicenseUrl || selectedUser.cacDocumentUrl) && (
                 <div className="space-y-1.5">
                   <p className="text-xs text-muted-foreground">Documents</p>
-                  {selectedUser.businessLicenseUrl && <a href={selectedUser.businessLicenseUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-primary hover:underline"><FileText className="w-3.5 h-3.5" />Business License</a>}
-                  {selectedUser.importerLicenseUrl && <a href={selectedUser.importerLicenseUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-primary hover:underline"><FileText className="w-3.5 h-3.5" />Importer License</a>}
-                  {selectedUser.cacDocumentUrl && <a href={selectedUser.cacDocumentUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-primary hover:underline"><FileText className="w-3.5 h-3.5" />CAC Document</a>}
+                  {selectedUser.businessLicenseUrl && (
+                    <button type="button" onClick={() => handleViewDocument(selectedUser.businessLicenseUrl!, "business-license")} className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                      <FileText className="w-3.5 h-3.5 shrink-0" />Business License
+                    </button>
+                  )}
+                  {selectedUser.importerLicenseUrl && (
+                    <button type="button" onClick={() => handleViewDocument(selectedUser.importerLicenseUrl!, "importer-license")} className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                      <FileText className="w-3.5 h-3.5 shrink-0" />Importer License
+                    </button>
+                  )}
+                  {selectedUser.cacDocumentUrl && (
+                    <button type="button" onClick={() => handleViewDocument(selectedUser.cacDocumentUrl!, "cac-document")} className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                      <FileText className="w-3.5 h-3.5 shrink-0" />CAC Document
+                    </button>
+                  )}
                 </div>
               )}
             </div>

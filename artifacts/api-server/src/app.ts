@@ -7,7 +7,28 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import uploadsRouter from "./routes/uploads";
 import { logger } from "./lib/logger";
-import { pool } from "@workspace/db";
+import { createPool } from "@workspace/db";
+
+// Create a DEDICATED pool for the session store so it can never exhaust
+// the main application pool and cause all API requests to hang.
+const sessionPool = createPool({
+  max: 3,                    // tiny: sessions need very few connections
+  idleTimeoutMillis: 30000,  // release idle connections after 30s
+  connectionTimeoutMillis: 5000, // fail fast instead of hanging forever
+});
+
+// Ensure the session table exists for connect-pg-simple
+sessionPool.query(`
+  CREATE TABLE IF NOT EXISTS "session" (
+    "sid" varchar NOT NULL,
+    "sess" json NOT NULL,
+    "expire" timestamp(6) NOT NULL,
+    CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
+  );
+  CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+`).catch(err => {
+  logger.error("Failed to ensure session table exists:", err);
+});
 
 const PgSession = ConnectPgSimple(session);
 
@@ -34,16 +55,20 @@ app.use(
 );
 
 app.use(cors({ credentials: true, origin: true }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => { res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate"); next(); });
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 
 const sessionSecret = process.env.SESSION_SECRET || "medi-supply-dev-secret-change-in-prod";
 
+// Trust proxy headers from Vercel/reverse proxies so secure cookies work
+app.set("trust proxy", 1);
+
 app.use(
   session({
     store: new PgSession({
-      pool,
+      pool: sessionPool,
       tableName: "session",
       createTableIfMissing: true,
     }),
@@ -54,7 +79,7 @@ app.use(
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: "lax",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
   })
 );

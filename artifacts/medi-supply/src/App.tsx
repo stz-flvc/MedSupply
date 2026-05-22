@@ -30,6 +30,8 @@ import AdminUsers from "@/pages/admin/Users";
 import AdminProducts from "@/pages/admin/Products";
 import AdminOrders from "@/pages/admin/Orders";
 import AdminAllUsers from "@/pages/admin/AllUsers";
+import AdminChats from "@/pages/admin/Chats";
+import AdminStockCount from "@/pages/admin/StockCount";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -108,6 +110,12 @@ function Router() {
         </Route>
         <Route path="/admin/all-users">
           <ProtectedRoute role="admin"><AdminAllUsers /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/stock-count">
+          <ProtectedRoute role="admin"><AdminStockCount /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/chats">
+          <ProtectedRoute role="admin"><AdminChats /></ProtectedRoute>
         </Route>
 
         <Route component={NotFound} />

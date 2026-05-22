@@ -10,7 +10,14 @@ const upload = multer({
   storage,
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit to match frontend validation
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    const allowedTypes = [
+      "image/jpeg", 
+      "image/png", 
+      "image/webp", 
+      "application/pdf", 
+      "application/msword", 
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {

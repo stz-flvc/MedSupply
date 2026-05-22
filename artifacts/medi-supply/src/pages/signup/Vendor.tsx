@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useSignupVendor } from "@workspace/api-client-react";
+import { useSignupVendor, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ const PRODUCT_CATEGORIES = [
 
 export default function VendorSignup() {
   const [, navigate] = useLocation();
+  const qc = useQueryClient();
   const signupMutation = useSignupVendor();
   const { toast } = useToast();
   const [error, setError] = useState("");
@@ -111,7 +113,10 @@ export default function VendorSignup() {
         },
       },
       {
-        onSuccess: () => navigate("/pending"),
+        onSuccess: (data) => {
+          qc.setQueryData(getGetMeQueryKey(), data.user);
+          navigate("/pending");
+        },
         onError: (err: unknown) => setError((err as { data?: { error?: string } })?.data?.error || "Registration failed"),
       }
     );
@@ -196,7 +201,7 @@ export default function VendorSignup() {
                 <div className="relative border-2 border-dashed border-border rounded-lg p-4 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center text-center group">
                   <input
                     type="file"
-                    accept=".jpeg,.png,.jpg,.webp,.pdf"
+                    accept=".jpeg,.jpg,.webp,.pdf,.doc,.docx"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     onChange={(e) => handleFileUpload(e, "cacDocumentUrl")}
                     disabled={isUploadingCAC}
@@ -214,7 +219,7 @@ export default function VendorSignup() {
                       <div className="text-sm font-medium">
                         {isUploadingCAC ? "Uploading..." : "Click or drag file to upload"}
                       </div>
-                      <div className="text-xs text-muted-foreground">JPEG, PNG, WEBP, or PDF</div>
+                      <div className="text-xs text-muted-foreground">PDF, DOC, DOCX, JPEG, WEBP</div>
                     </div>
                   )}
                 </div>

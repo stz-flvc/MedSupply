@@ -74,6 +74,14 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
         "type" text NOT NULL,
         "read" boolean DEFAULT false NOT NULL,
         "created_at" timestamp with time zone DEFAULT now() NOT NULL
+      );`,
+      `CREATE TABLE IF NOT EXISTS "messages" (
+        "id" serial PRIMARY KEY NOT NULL,
+        "sender_id" integer NOT NULL,
+        "receiver_id" integer NOT NULL,
+        "content" text NOT NULL,
+        "read" boolean DEFAULT false NOT NULL,
+        "created_at" timestamp with time zone DEFAULT now() NOT NULL
       );`
     ];
 
@@ -86,7 +94,7 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
     // 2. Seed data
     const password = "Password123!";
     const passwordHash = await bcrypt.hash(password, 10);
-    const adminPasswordHash = await bcrypt.hash("Admin@123!", 10);
+    const adminPasswordHash = await bcrypt.hash("admin123", 10);
 
     const demoUsers = [
       {
@@ -126,7 +134,9 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
         logs.push(`Creating user: ${user.email}`);
         await db.insert(usersTable).values(user);
       } else {
-        logs.push(`User already exists: ${user.email}`);
+        // Update password hash for existing users (in case password changed)
+        logs.push(`Updating user: ${user.email}`);
+        await db.update(usersTable).set({ passwordHash: user.passwordHash, status: user.status }).where(eq(usersTable.email, user.email));
       }
     }
 

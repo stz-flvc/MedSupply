@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSignupBuyer } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function BuyerSignup() {
   const [, navigate] = useLocation();
+  const qc = useQueryClient();
   const signupMutation = useSignupBuyer();
   const { toast } = useToast();
   const [error, setError] = useState("");
@@ -95,7 +98,10 @@ export default function BuyerSignup() {
         },
       },
       {
-        onSuccess: () => navigate("/pending"),
+        onSuccess: (data) => {
+          qc.setQueryData(getGetMeQueryKey(), data.user);
+          navigate("/pending");
+        },
         onError: (err: unknown) => setError((err as { data?: { error?: string } })?.data?.error || "Registration failed"),
       }
     );

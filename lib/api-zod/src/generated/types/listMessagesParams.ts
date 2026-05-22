@@ -6,6 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type VerifyProductBody = {
-  pricePerUnit?: number;
+export type ListMessagesParams = {
+otherUserId?: number;
 };

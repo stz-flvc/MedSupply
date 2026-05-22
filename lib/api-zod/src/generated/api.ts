@@ -668,3 +668,79 @@ export const UpdateOrderStatusResponse = zod.object({
 })
 
 
+/**
+ * @summary List messages between current user and another user
+ */
+export const ListMessagesQueryParams = zod.object({
+  "otherUserId": zod.coerce.number().optional()
+})
+
+export const ListMessagesResponseItem = zod.object({
+  "id": zod.number(),
+  "senderId": zod.number(),
+  "receiverId": zod.number(),
+  "content": zod.string(),
+  "read": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const ListMessagesResponse = zod.array(ListMessagesResponseItem)
+
+
+/**
+ * @summary Send a message to another user
+ */
+export const SendMessageBody = zod.object({
+  "receiverId": zod.number().optional(),
+  "content": zod.string()
+})
+
+
+/**
+ * @summary (Admin only) List active chat threads
+ */
+export const ListMessageThreadsResponseItem = zod.object({
+  "user": zod.object({
+  "id": zod.number(),
+  "email": zod.string(),
+  "role": zod.enum(['buyer', 'vendor', 'admin']),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'suspended']),
+  "fullName": zod.string().nullish(),
+  "companyName": zod.string().nullish(),
+  "companyAddress": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "businessType": zod.string().nullish(),
+  "cacNumber": zod.string().nullish(),
+  "businessLicenseUrl": zod.string().nullish(),
+  "contactPerson": zod.string().nullish(),
+  "nafdacLicense": zod.string().nullish(),
+  "importerLicenseUrl": zod.string().nullish(),
+  "cacDocumentUrl": zod.string().nullish(),
+  "productCategories": zod.array(zod.string()).nullish(),
+  "rejectionReason": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}),
+  "lastMessage": zod.object({
+  "id": zod.number(),
+  "senderId": zod.number(),
+  "receiverId": zod.number(),
+  "content": zod.string(),
+  "read": zod.boolean(),
+  "createdAt": zod.coerce.date()
+}),
+  "unreadCount": zod.number()
+})
+export const ListMessageThreadsResponse = zod.array(ListMessageThreadsResponseItem)
+
+
+/**
+ * @summary Mark messages from sender as read
+ */
+export const MarkMessagesReadBody = zod.object({
+  "senderId": zod.number().optional()
+})
+
+export const MarkMessagesReadResponse = zod.object({
+  "message": zod.string()
+})
+
+

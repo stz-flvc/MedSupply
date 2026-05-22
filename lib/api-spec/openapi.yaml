@@ -612,10 +612,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                pricePerUnit:
-                  type: number
+              $ref: "#/components/schemas/VerifyProductInput"
       responses:
         "200":
           description: Product verified
@@ -693,6 +690,96 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+
+  /messages:
+    get:
+      operationId: listMessages
+      tags: [messages]
+      summary: List messages between current user and another user
+      parameters:
+        - name: otherUserId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+        "403":
+          description: Forbidden conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message to another user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "403":
+          description: Forbidden conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /messages/threads:
+    get:
+      operationId: listMessageThreads
+      tags: [messages]
+      summary: (Admin only) List active chat threads
+      responses:
+        "200":
+          description: Active threads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MessageThread"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /messages/read:
+    post:
+      operationId: markMessagesRead
+      tags: [messages]
+      summary: Mark messages from sender as read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkMessagesReadInput"
+      responses:
+        "200":
+          description: Messages marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
 
 components:
   schemas:
@@ -1049,3 +1136,56 @@ components:
           type: integer
         fulfilledOrders:
           type: integer
+
+    # ─── MESSAGE SCHEMAS ───────────────────────────────────────────────────────
+
+    Message:
+      type: object
+      required: [id, senderId, receiverId, content, read, createdAt]
+      properties:
+        id:
+          type: integer
+        senderId:
+          type: integer
+        receiverId:
+          type: integer
+        content:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    MessageInput:
+      type: object
+      required: [content]
+      properties:
+        receiverId:
+          type: integer
+        content:
+          type: string
+
+    MessageThread:
+      type: object
+      required: [user, lastMessage, unreadCount]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        lastMessage:
+          $ref: "#/components/schemas/Message"
+        unreadCount:
+          type: integer
+
+    VerifyProductInput:
+      type: object
+      properties:
+        pricePerUnit:
+          type: number
+
+    MarkMessagesReadInput:
+      type: object
+      properties:
+        senderId:
+          type: integer
+

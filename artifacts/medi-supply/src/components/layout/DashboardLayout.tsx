@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Bell, LogOut, Package, ChevronDown } from "lucide-react";
+import { Bell, LogOut, Package, ChevronDown, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,11 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth";
 import { useListNotifications, useMarkAllNotificationsRead, useMarkNotificationRead, useGetAdminStats } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getListNotificationsQueryKey, getGetAdminStatsQueryKey } from "@workspace/api-client-react";
+import ChatWidget from "../chat/ChatWidget";
 
 interface NavItem {
   label: string;
@@ -34,6 +36,7 @@ export function DashboardLayout({ navItems, children }: DashboardLayoutProps) {
   const { data: adminStats } = useGetAdminStats({ query: { enabled: isAdmin, queryKey: ["/api/admin/stats"] as const } });
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllNotificationsRead();
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const unread = notifications.filter((n) => !n.read);
 
@@ -45,10 +48,55 @@ export function DashboardLayout({ navItems, children }: DashboardLayoutProps) {
 
   const displayName = user?.companyName || user?.fullName || user?.email || "";
 
+  const renderNavItems = (onNavigate?: () => void) => (
+    <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
+      {navItems.map((item) => {
+        const isRootPath = item.href === '/admin' || item.href === '/vendor' || item.href === '/buyer';
+        const isActive = isRootPath ? location === item.href : location.startsWith(item.href);
+        
+        let showBadge = false;
+
+        if (user?.role === "admin") {
+          if (item.label === "User Verification" && (adminStats?.pendingUsers ?? 0) > 0) showBadge = true;
+          if (item.label === "Products" && (adminStats?.pendingProducts ?? 0) > 0) showBadge = true;
+          if (item.label === "Orders" && (adminStats?.pendingOrders ?? 0) > 0) showBadge = true;
+        }
+
+        if (user?.role === "buyer") {
+          if (item.label === "Notifications" && unread.length > 0) showBadge = true;
+          if (item.label === "My Orders" && unread.some((n) => n.type === "payment_required")) showBadge = true;
+        }
+
+        if (user?.role === "vendor") {
+          if (item.label === "Notifications" && unread.length > 0) showBadge = true;
+          if (item.label === "My Products" && unread.some((n) => n.type === "product_verified" || n.type === "product_rejected")) showBadge = true;
+        }
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className={`flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+              isActive
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+          >
+            <span>{item.label}</span>
+            {showBadge && (
+              <span className="w-2 h-2 rounded-full bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" />
+            )}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 flex-shrink-0 border-r border-border bg-card flex flex-col">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 flex-shrink-0 border-r border-border bg-card flex-col">
         <div className="h-16 flex items-center px-6 border-b border-border flex-shrink-0">
           <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
             <div className="w-8 h-8 rounded bg-primary flex items-center justify-center">
@@ -57,59 +105,39 @@ export function DashboardLayout({ navItems, children }: DashboardLayoutProps) {
             <span className="font-bold text-lg tracking-tight">MedSupply</span>
           </Link>
         </div>
-        
-        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-          {navItems.map((item) => {
-            const isRootPath = item.href === '/admin' || item.href === '/vendor' || item.href === '/buyer';
-            const isActive = isRootPath ? location === item.href : location.startsWith(item.href);
-            
-            // Notification badge logic per role
-            let showBadge = false;
-
-            // Admin: pending items needing review
-            if (user?.role === "admin") {
-              if (item.label === "User Verification" && (adminStats?.pendingUsers ?? 0) > 0) showBadge = true;
-              if (item.label === "Products" && (adminStats?.pendingProducts ?? 0) > 0) showBadge = true;
-              if (item.label === "Orders" && (adminStats?.pendingOrders ?? 0) > 0) showBadge = true;
-            }
-
-            // Buyer: unread notifications or payment-required alerts
-            if (user?.role === "buyer") {
-              if (item.label === "Notifications" && unread.length > 0) showBadge = true;
-              if (item.label === "My Orders" && unread.some((n) => n.type === "payment_required")) showBadge = true;
-            }
-
-            // Vendor: unread notifications or product status updates
-            if (user?.role === "vendor") {
-              if (item.label === "Notifications" && unread.length > 0) showBadge = true;
-              if (item.label === "My Products" && unread.some((n) => n.type === "product_verified" || n.type === "product_rejected")) showBadge = true;
-            }
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <span>{item.label}</span>
-                {showBadge && (
-                  <span className="w-2 h-2 rounded-full bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+        {renderNavItems()}
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 border-b border-border bg-card/90 backdrop-blur-sm flex items-center justify-end flex-shrink-0 z-40 w-full px-6">
-          <div className="flex items-center gap-4">
+        <header className="h-16 border-b border-border bg-card/90 backdrop-blur-sm flex items-center justify-between md:justify-end flex-shrink-0 z-40 w-full px-4 md:px-6">
+          <div className="md:hidden flex items-center">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="w-5 h-5" />
+                  <span className="sr-only">Toggle navigation menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 p-0 flex flex-col">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                <SheetDescription className="sr-only">Access different sections of the dashboard</SheetDescription>
+                <div className="h-16 flex items-center px-6 border-b border-border flex-shrink-0">
+                  <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-primary flex items-center justify-center">
+                      <Package className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <span className="font-bold text-lg tracking-tight">MedSupply</span>
+                  </Link>
+                </div>
+                {renderNavItems(() => setMobileMenuOpen(false))}
+              </SheetContent>
+            </Sheet>
+            <span className="ml-3 font-bold text-lg md:hidden">MedSupply</span>
+          </div>
+
+          <div className="flex items-center gap-2 md:gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
@@ -190,6 +218,7 @@ export function DashboardLayout({ navItems, children }: DashboardLayoutProps) {
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>
+        <ChatWidget />
       </div>
     </div>
   );

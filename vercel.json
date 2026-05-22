@@ -1,13 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "pnpm -r build && pnpm --filter @workspace/db run push-force",
+  "buildCommand": "pnpm -r build",
   "outputDirectory": "artifacts/medi-supply/dist/public",
   "functions": {
     "api/index.js": {
-      "includeFiles": [
-        "artifacts/api-server/dist/**",
-        "lib/db/drizzle/**"
-      ]
+      "includeFiles": "artifacts/api-server/dist/**|lib/db/drizzle/**"
     }
   },
   "rewrites": [

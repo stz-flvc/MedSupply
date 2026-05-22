@@ -52,3 +52,5 @@ uploads/
 .gemini/
 *.log
 
+.vercel
+.env*.local
