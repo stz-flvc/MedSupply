@@ -18,6 +18,7 @@ function productToResponse(p: typeof productsTable.$inferSelect & { vendorName?:
     nafdacNumber: p.nafdacNumber,
     barcode: p.barcode,
     pricePerUnit: Number(p.pricePerUnit),
+    vendorPrice: p.vendorPrice ? Number(p.vendorPrice) : null,
     quantityAvailable: p.quantityAvailable,
     status: p.status,
     rejectionReason: p.rejectionReason,
@@ -65,7 +66,7 @@ router.patch("/vendor/products/:id", requireRole("vendor"), async (req, res): Pr
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(rawId, 10);
 
-  const [existing] = await db.select({ id: productsTable.id }).from(productsTable)
+  const [existing] = await db.select().from(productsTable)
     .where(and(eq(productsTable.id, id), eq(productsTable.vendorId, req.session.userId!)));
 
   if (!existing) {
@@ -82,7 +83,16 @@ router.patch("/vendor/products/:id", requireRole("vendor"), async (req, res): Pr
   if (coaUrl !== undefined) updates.coaUrl = coaUrl;
   if (nafdacNumber !== undefined) updates.nafdacNumber = nafdacNumber;
   if (barcode !== undefined) updates.barcode = barcode;
-  if (pricePerUnit != null) updates.pricePerUnit = pricePerUnit.toString();
+  if (pricePerUnit != null) {
+    // If admin has set a different selling price (vendorPrice exists),
+    // update vendorPrice to reflect the vendor's new requested price
+    // and leave pricePerUnit (the admin selling price) unchanged.
+    if (existing.vendorPrice) {
+      updates.vendorPrice = pricePerUnit.toString();
+    } else {
+      updates.pricePerUnit = pricePerUnit.toString();
+    }
+  }
   if (quantityAvailable != null) updates.quantityAvailable = parseInt(quantityAvailable, 10);
 
   const [updated] = await db.update(productsTable).set(updates).where(eq(productsTable.id, id)).returning();

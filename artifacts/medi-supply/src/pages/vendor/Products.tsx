@@ -143,7 +143,7 @@ export default function VendorProducts() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{p.category}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-right">₦{Number(p.pricePerUnit).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-right">₦{Number(p.vendorPrice ?? p.pricePerUnit).toLocaleString()}</td>
                       <td className="px-4 py-3 text-sm text-right">{p.quantityAvailable.toLocaleString()}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs px-2 py-1 rounded-full border font-medium ${status.color}`}>{status.label}</span>

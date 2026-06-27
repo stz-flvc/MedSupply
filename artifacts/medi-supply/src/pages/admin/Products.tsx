@@ -23,6 +23,7 @@ type Product = {
   id: number; vendorId: number; vendorName?: string | null; name: string;
   category: string; description: string; imageUrl?: string | null; coaUrl?: string | null;
   nafdacNumber?: string | null; barcode?: string | null; pricePerUnit: number;
+  vendorPrice?: number | null;
   quantityAvailable: number; status: string; rejectionReason?: string | null; createdAt: string;
 };
 
@@ -184,7 +185,14 @@ export default function AdminProducts() {
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{p.vendorName || `Vendor #${p.vendorId}`}</td>
                     <td className="px-4 py-3 text-sm">{p.category}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-right">₦{Number(p.pricePerUnit).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-sm text-right">
+                      <div className="font-semibold">₦{Number(p.pricePerUnit).toLocaleString()}</div>
+                      {p.vendorPrice && p.vendorPrice !== p.pricePerUnit && (
+                        <div className="text-[10px] text-muted-foreground">
+                          Vendor: ₦{Number(p.vendorPrice).toLocaleString()}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-right">{p.quantityAvailable.toLocaleString()}</td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
@@ -229,10 +237,14 @@ export default function AdminProducts() {
                       </div>
                     ) : null
                   },
+                  selectedProduct.vendorPrice && selectedProduct.vendorPrice !== selectedProduct.pricePerUnit ? {
+                    label: "Vendor Original Price",
+                    value: `₦${Number(selectedProduct.vendorPrice).toLocaleString()}`
+                  } : null,
                   { label: "Stock", value: `${selectedProduct.quantityAvailable.toLocaleString()} units` },
                   { label: "NAFDAC No.", value: selectedProduct.nafdacNumber },
                   { label: "Barcode", value: selectedProduct.barcode },
-                ].filter((i) => i.value !== undefined || i.customRender).map(({ label, value, customRender }) => (
+                ].filter((i): i is NonNullable<typeof i> => i !== null && (i.value !== undefined || !!i.customRender)).map(({ label, value, customRender }) => (
                   customRender ? (
                     <div key={label} className="h-full">{customRender}</div>
                   ) : (

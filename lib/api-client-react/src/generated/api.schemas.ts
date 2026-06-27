@@ -148,6 +148,8 @@ export interface Product {
   /** @nullable */
   barcode?: string | null;
   pricePerUnit: number;
+  /** @nullable */
+  vendorPrice?: number | null;
   quantityAvailable: number;
   status: ProductStatus;
   /** @nullable */

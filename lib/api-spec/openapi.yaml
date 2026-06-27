@@ -959,6 +959,8 @@ components:
           type: ["string", "null"]
         pricePerUnit:
           type: number
+        vendorPrice:
+          type: ["number", "null"]
         quantityAvailable:
           type: integer
         status:

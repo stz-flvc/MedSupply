@@ -13,6 +13,7 @@ export const productsTable = pgTable("products", {
   nafdacNumber: text("nafdac_number"),
   barcode: text("barcode"),
   pricePerUnit: numeric("price_per_unit", { precision: 12, scale: 2 }).notNull(),
+  vendorPrice: numeric("vendor_price", { precision: 12, scale: 2 }),
   quantityAvailable: integer("quantity_available").notNull(),
   status: text("status").notNull().default("pending"), // pending | verified | rejected
   rejectionReason: text("rejection_reason"),

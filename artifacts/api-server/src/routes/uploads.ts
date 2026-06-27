@@ -40,7 +40,7 @@ router.post("/upload", (req, res, next) => {
     const base64 = req.file.buffer.toString("base64");
     const dataUri = `data:${req.file.mimetype};base64,${base64}`;
     
-    res.json({ url: dataUri });
+    return res.json({ url: dataUri });
   });
 });
 

@@ -50,6 +50,7 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
         "nafdac_number" text,
         "barcode" text,
         "price_per_unit" numeric(12, 2) NOT NULL,
+        "vendor_price" numeric(12, 2),
         "quantity_available" integer NOT NULL,
         "status" text DEFAULT 'pending' NOT NULL,
         "rejection_reason" text,
@@ -356,6 +357,7 @@ router.get("/admin/products", requireRole("admin"), async (req, res): Promise<vo
     nafdacNumber: productsTable.nafdacNumber,
     barcode: productsTable.barcode,
     pricePerUnit: productsTable.pricePerUnit,
+    vendorPrice: productsTable.vendorPrice,
     quantityAvailable: productsTable.quantityAvailable,
     status: productsTable.status,
     rejectionReason: productsTable.rejectionReason,
@@ -365,7 +367,7 @@ router.get("/admin/products", requireRole("admin"), async (req, res): Promise<vo
     .leftJoin(usersTable, eq(productsTable.vendorId, usersTable.id));
 
   const filtered = status ? products.filter((p) => p.status === status) : products;
-  res.json(filtered.map((p) => ({ ...p, pricePerUnit: Number(p.pricePerUnit), createdAt: p.createdAt.toISOString() })));
+  res.json(filtered.map((p) => ({ ...p, pricePerUnit: Number(p.pricePerUnit), vendorPrice: p.vendorPrice ? Number(p.vendorPrice) : null, createdAt: p.createdAt.toISOString() })));
 });
 
 // PATCH /admin/products/:id/verify
@@ -374,9 +376,19 @@ router.patch("/admin/products/:id/verify", requireRole("admin"), async (req, res
   const id = parseInt(rawId, 10);
   const { pricePerUnit } = req.body;
 
+  // Read the current product so we can preserve the vendor's original price
+  const [existing] = await db.select().from(productsTable).where(eq(productsTable.id, id));
+  if (!existing) { res.status(404).json({ error: "Product not found" }); return; }
+
   const updateData: Partial<typeof productsTable.$inferInsert> = { status: "verified", rejectionReason: null };
+
   if (pricePerUnit !== undefined && pricePerUnit !== null) {
-    updateData.pricePerUnit = pricePerUnit.toString();
+    const newPrice = pricePerUnit.toString();
+    // Only save vendorPrice if the admin is actually changing the price
+    if (newPrice !== existing.pricePerUnit) {
+      updateData.vendorPrice = existing.vendorPrice ?? existing.pricePerUnit;
+      updateData.pricePerUnit = newPrice;
+    }
   }
 
   const [product] = await db.update(productsTable)
@@ -387,7 +399,7 @@ router.patch("/admin/products/:id/verify", requireRole("admin"), async (req, res
   if (!product) { res.status(404).json({ error: "Product not found" }); return; }
 
   await sendNotification(product.vendorId, `Your product "${product.name}" has been verified and is now live on the marketplace.`, "product_verified");
-  res.json({ ...product, pricePerUnit: Number(product.pricePerUnit), createdAt: product.createdAt.toISOString() });
+  res.json({ ...product, pricePerUnit: Number(product.pricePerUnit), vendorPrice: product.vendorPrice ? Number(product.vendorPrice) : null, createdAt: product.createdAt.toISOString() });
 });
 
 // PATCH /admin/products/:id/reject
