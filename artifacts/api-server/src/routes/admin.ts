@@ -92,6 +92,14 @@ router.post("/admin/seed", async (req, res): Promise<void> => {
     }
     logs.push("All tables verified.");
 
+    // Migration: add vendor_price column if missing (for existing deployments)
+    try {
+      await pool.query(`ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "vendor_price" numeric(12, 2)`);
+      logs.push("vendor_price column ensured.");
+    } catch (e: any) {
+      logs.push(`vendor_price migration note: ${e.message}`);
+    }
+
     // 2. Seed data
     const password = "Password123!";
     const passwordHash = await bcrypt.hash(password, 10);
